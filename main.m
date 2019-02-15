@@ -12,6 +12,12 @@ function main
 % c: (1*T) unit vari ordering costs
 % h: (1*T) unit holding costs
 % B0: initial cash balance for the retailer
+% beta: goodwill loss rate
+% BL: credit-based loan
+% TL: length of credit-based loan
+% rL: interest rate of loan
+% pai: unit penalty cost for lost sale
+%
 %
 % Decision variables:
 % I: (1*T) end-of-period inventory of each period
@@ -31,6 +37,10 @@ c = [13	13	13	 13	 13	 13	 13	 13	 13	 13	 13	 13];
 h = [1	1  1  1	 1	 1	  1	  1	  1	  1	  1	  1];	
 s = [1000 1000 1000 1000 1000 1000 1000	1000 1000 1000 1000	1000];	
 B0 = 5000;
+beta = 0.5;
+BL = 1000;
+TL = 6;
+rL = 0.05;
 
 
 I0 = 0; % initial inventory is zero
