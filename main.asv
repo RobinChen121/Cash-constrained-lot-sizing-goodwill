@@ -38,12 +38,10 @@ c = [13	13	13	 13	 13	 13	 13	 13	 13	 13	 13	 13];
 h = [1	1  1  1	 1	 1	  1	  1	  1	  1	  1	  1];	
 s = [1000 1000 1000 1000 1000 1000 1000	1000 1000 1000 1000	1000];	
 B0 = 5000;
-beta = 0;
+beta = 0.5;
 BL = 1000;
 TL = 6;
 rL = 0.05;
-T = length(d);
-pai = zeros(1, T); 
 
 % %% or reading some parameter values from txt file in the current directory
 % string = input('please input your file name: \n', 's'); % for example, d_12-84.txt
@@ -92,11 +90,10 @@ pai = zeros(1, T);
 
 %% run the forward algorithm
 tic
-whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
-if beta > 0
+if beta>0
     [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlow(d, p, s, c, h, beta, B0, BL, TL, BL * (1 + rL)^TL);
 else
-    [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL);
+    [x,y,w,I,B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL);
 end
 toc
 
@@ -105,12 +102,6 @@ string = 'lot sizing-dp.txt';
 OutputResult(x, y, w, I, B, beta, string, whetherAdjustPlan, whetherMoveOrderQuantity);
 
 %% run the mip model by cplex
-tic
-[x, y, w, I, B] = MipCplex(d, p, s, c, h, pai, beta, B0, BL, TL, rL);
-toc
 
-%% output results to txt file
-string = 'lot sizing-Cplex.txt';
-OutputResult(x, y, w, I, B, beta, string, whetherAdjustPlan, whetherMoveOrderQuantity);
 
 end

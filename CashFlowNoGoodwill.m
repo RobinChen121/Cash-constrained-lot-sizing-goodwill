@@ -1,4 +1,4 @@
-function [x,y,w,I,B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL)
+function [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL)
 
 % ***************************************************************************
 % Description: compute the cash flow under the situation of no goodwill
