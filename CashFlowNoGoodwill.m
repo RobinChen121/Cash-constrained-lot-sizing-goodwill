@@ -22,7 +22,8 @@ function [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL
 % Decision variables:
 % I: (1*T) end-of-period inventory of each period
 % B: (1*T) end-of-period cash of each period
-% BB: (T*T) maximum cash increment from period m to period n
+% BB: (T*T)end-of-period cash in each ordering cycle of the matrix
+% WW: (T*T) end-of-period lost sale in each ordering cycle of the matrix
 % x: (1*T) binary variables signaling whether ordering in each period
 % y: (1*T) ordering quantity in each period
 % w: (1*T) demand shortage (lost sales) in each period
@@ -44,7 +45,7 @@ options = optimset('TolFun', 1e-6, 'MaxIter', 50); % matlab function "linprog" s
 
 %% forward dynamic programming 
 for i = 1 : T
-    for j = 1 : T
+    for j = i : T
         cumUnitHoldCost = zeros(j- i + 1, j - i + 1); % cumulative unit holding cost for one ordering cycle
         tempH = zeros(j - i + 1, j - i + 1); % for computation of cumUnitHoldCost
         for m = 1 : j - i + 1
@@ -87,9 +88,9 @@ for i = 1 : T
         [~, fval, exitflag] = linprog(f, A, b, [], [], lb, ub, [], options); % use linprog to compute
         if exitflag == 1
             BB(i, j) = -fval - s(i) - pai(i:j) * d(i:j)' + iniCashVector(i);
-%             if BB(i,j)<iniCashVector(i)-pai(i:j)*d(i:j)'
-%                 BB(i,j)=iniCashVector(i)-pai(i:j)*d(i:j)';
-%             end
+            if BB(i,j) < iniCashVector(i) - pai(i:j)*d(i:j)' % if solution worse than all demandn lost, then no satifying quantity, demand all lost
+                BB(i,j) = iniCashVector(i) - pai(i:j)*d(i:j)';
+            end
         else
             BB(i, j) = iniCashVector(i) - pai(i : j) * d(i : j)'; % if no solution, then no satifying quantity, demand all lost
         end
@@ -235,7 +236,7 @@ while i <= T
     end
 end
 
-%% adjust the plan
+%% move ordering quantity
 cycleStartPeriod = zeros(1, T);
 cycleEndPeriod = zeros(1, T);
 for i = 1 : T
@@ -294,7 +295,7 @@ end
 B(1) = iniCash + p(1) * (d(1) - w(1)) - h(1) * I(1) - y(1) * c(1) - x(1) * s(1) - pai(1)*w(1);
 for t = 2 : T
     if t == TL  % need to pay back the loan and interest at this period
-        B(t) = B(t - 1) + p(t) * (d(t) - w(t))- h(t) * I(t) - y(t) * c(t) - x(t) * s(t) - pai(t) * w(t) - BL * (1 + TL)^rL;
+        B(t) = B(t - 1) + p(t) * (d(t) - w(t))- h(t) * I(t) - y(t) * c(t) - x(t) * s(t) - pai(t) * w(t) - BL * (1 + rL)^TL;
     else
         B(t) = B(t -1 ) + p(t) * (d(t) - w(t))- h(t) * I(t) - y(t) * c(t) - x(t) * s(t) - pai(t)* w(t);
     end

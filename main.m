@@ -37,10 +37,10 @@ p = [16	 16  16	 17	 17	20	17	16	20	20	17	16];
 c = [13	13	13	 13	 13	 13	 13	 13	 13	 13	 13	 13];	
 h = [1	1  1  1	 1	 1	  1	  1	  1	  1	  1	  1];	
 s = [1000 1000 1000 1000 1000 1000 1000	1000 1000 1000 1000	1000];	
-B0 = 5000;
+B0 = 3000;
 beta = 0;
 BL = 1000;
-TL = 6;
+TL = 3;
 rL = 0.05;
 T = length(d);
 pai = zeros(1, T); 
@@ -94,7 +94,7 @@ pai = zeros(1, T);
 tic
 whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
 if beta > 0
-    [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlow(d, p, s, c, h, beta, B0, BL, TL, BL * (1 + rL)^TL);
+    [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlow(d, p, s, c, h, beta, B0, BL, TL, rL); % there is no unit penalty cost for lost sale for this model
 else
     [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL);
 end
@@ -102,7 +102,7 @@ toc
 
 %% output results to txt file
 string = 'lot sizing-dp.txt';
-OutputResult(x, y, w, I, B, beta, string, whetherAdjustPlan, whetherMoveOrderQuantity);
+OutputResult(x, y, w, I, B, beta, d, string, whetherAdjustPlan, whetherMoveOrderQuantity);
 
 %% run the mip model by cplex
 tic
@@ -111,6 +111,6 @@ toc
 
 %% output results to txt file
 string = 'lot sizing-Cplex.txt';
-OutputResult(x, y, w, I, B, beta, string, whetherAdjustPlan, whetherMoveOrderQuantity);
+OutputResult(x, y, w, I, B, beta, d, string, whetherAdjustPlan, whetherMoveOrderQuantity);
 
 end

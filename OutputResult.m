@@ -1,4 +1,4 @@
-function OutputResult(x, y, w, I, B, beta, string, whetherAdjustPlan, whetherMoveOrderQuantity)
+function OutputResult(x, y, w, I, B, beta, d, string, whetherAdjustPlan, whetherMoveOrderQuantity)
 
 % ***************************************************************************
 % output result to a txt file
@@ -9,6 +9,7 @@ function OutputResult(x, y, w, I, B, beta, string, whetherAdjustPlan, whetherMov
 
 fid = fopen(string, 'w');
 fprintf(fid, 'whether ordering in this period: \n'); fprintf(fid,'x = ');
+T = length(y);
 for i = 1 : T
     fprintf(fid, '%d\t', x(i));
     if mod(i, 20)==0
