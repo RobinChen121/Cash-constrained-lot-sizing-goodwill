@@ -67,8 +67,8 @@ end
 tempP = tril(repmat(p(1 : n), n, 1)); 
 A(1 : n - 1, :) = tempC(1 : n - 1, :) - tempP(1 : n - 1, :) + tempH(1 : n - 1, :);
 b(1 : n - 1) = iniB - tempS(1 : n - 1);
-if thisLoanLength > 0
-    b(thisLoanLength : n - 1) = b(thisLoanLength : n - 1) - ratePay;
+if thisL > 0
+    b(thisL : n - 1) = b(thisL : n - 1) - ratePay;
 end
 
 %% ordering quantity constrint, from the n th to the n + xSum - 1 th
@@ -90,26 +90,21 @@ if orderingIndex(1)>1
     iniW = wFlow(end);
 end
 for i = 1 : orderingIndex(1) - 1
-    A(n + xSum + i - 1, i) = 1; b(n + xSum + i - 1, i) = 0; % v_t = 0 at this situation
+    A(n + xSum + i - 1) = 1; %需求满足量为0
 end
-
-Ed(orderingIndex(1)) = max(0, d(orderingIndex(1)) - beta * iniW);
+Ed(orderingIndex(1)) = max(0, d(orderingIndex(1)) - beita * iniW);
 preIndexLossMuch = orderingIndex(1) - 1;
 i = orderingIndex(1);
-while i <= n
-    if i + 1 <= n 
-        rowIndex = n + xSum + i -1;
-        if isLossMuch(i + 1) ~= 1
-            tempBetaArray = BetaArray(i - preIndexLossMuch, beta);
-            A(rowIndex, preIndexLossMuch + 1 : i) = tempBetaArray; 
-            b(rowIndex) = Ed(preIndexLossMuch + 1 : i) * tempBetaArray';
+while i<=n
+    if i+1<=n 
+        rowIndex=n+xSum+i-1;
+        if isLossMuch(i+1)~=1
+            tempBetaArray=BetaArray(i-preIndexLossMuch,beita);
+            A(rowIndex,preIndexLossMuch+1:i)=tempBetaArray; b(rowIndex)=Ed(preIndexLossMuch+1:i)*tempBetaArray';
         else
-            tempBetaArray = BeitaZhengfu(i - preIndexLossMuch, beita);
-            A(rowIndex, preIndexLossMuch + 1 : i) = tempBetaArray;
-            b(rowIndex) = Ed(preIndexLossMuch + 1 : i) * tempBetaArray' - 2 * d(i + 1); % effective demand constraint for period i
-            A(rowIndex + 1, i + 1) = 1; % effective demand constraint for period i + 1
-            preIndexLossMuch = i + 1;
-            i = i + 1;
+            tempBetaArray=BeitaZhengfu(i-preIndexLossMuch,beita);
+            A(rowIndex,preIndexLossMuch+1:i)=tempBetaArray; b(rowIndex)=Ed(preIndexLossMuch+1:i)*tempBetaArray'-2*d(i+1); % i 跟 i+1 的有效需求约束
+            A(rowIndex+1,i+1)=1;preIndexLossMuch=i+1;i=i+1;
         end
     end
     i=i+1;
@@ -119,7 +114,7 @@ if isLossMuch(n)~=1
     A(n+xSum+n-1,preIndexLossMuch+1:n)=tempBetaArray; b(n+xSum+n-1)=Ed(preIndexLossMuch+1:n)*tempBetaArray';
 end
 
-%% one constraint: can not lose more than the previous plan
+%% can not lose more than the previous plan
 if needLossless == 1&& n - preIndexLossMuch > 0
     tempBetaArray = BetaArray(n - preIndexLossMuch, beta);
     A(n + xSum + n, preIndexLossMuch+1 : n) = -tempBetaArray;
