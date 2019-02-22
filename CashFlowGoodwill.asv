@@ -150,7 +150,7 @@ while i <= T
                     finalIniB = thisFinalIniB; finalIniW = thisFinalIniW;
                 end
             end % optX(k, m : k) = optX(i, m : k); i = k; % may use this 
-            if finalB > lastB + 1e-4 % check whether [1 0 0 1 0 1 0 0 1 0] is less than  [1 0 0 0 1 0 1 0 0 0 0], sometimes not necessary
+            if finalB > lastB + 1e-4 % check whether [1 0 0 1 0 1 0 0] is less than  [1 0 0 0 1 0]
                 satDemand{k + 1, n} = tempSatDemand;
                 [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(finalXX, finalIniB, finalIniW, iniBIJ(m : n, m : n), iniWIJ(m : n, m : n));
                 for jj = n + 1 : N
@@ -161,7 +161,7 @@ while i <= T
                     [tempXX, tempBB, thisTempSatDemand, thisFinalIniB, thisFinalIniW, tempWW] = ...
                         ComputeMkn(xMn, lastX, iniB, iniW, lastB, lastW, lastSatDemand, d(m : jj), p(m : jj), c(m : jj), s(m : jj),...
                                     h(m : jj), beta, 1, thisLoanlength, loanPayBack);
-                    if tempBB > lastB + 1e-2 
+                    if tempBB > lastB + 1e-2 %选一个最大的再更新
                         BB(k + 1, jj) = tempBB; WW(k + 1, jj) = tempWW; XX{k + 1, jj} = tempXX; optX(k + 1, jj - length(tempXX) + 1 : jj) = tempXX;
                         satDemand{k + 1, jj} = thisTempSatDemand; finalXX = tempXX;
                         finalIniB = thisFinalIniB; finalIniW = thisFinalIniW;
