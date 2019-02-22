@@ -87,7 +87,129 @@ while i <= T
         end
         
 
+    end % the loop for j
+    
+     %% compute optX
+    if i > 1 && i < N
+        [sortB , ia, ~] = unique(round(BB(1 : i, i))); % return no repetition of an array
+        if length(sortB) > 1
+            if (sortB(end) - sortB(end - 1)) / sortB(end) < 0.01 && WW(ia(end), i) > 10 && WW(ia(end -1 ), i) < 1 % if another one final cash very close, but lost sale is less, choose it
+                startIndex = ia(end - 1); optIniB(i + 1) = BB(startIndex, i);
+            else
+                startIndex = ia(end); optIniB(i + 1) = BB(startIndex, i);
+            end
+        else
+            [optIniB(i + 1), startIndex] = max(BB(1 : i, i)); 
+        end
+    else
+        [optIniB(i + 1), startIndex] = max(BB(1 : i, i)); 
     end
+    tempXX = XX{startIndex, i};
+    if startIndex > 1
+        optX(i, :) = optX(startIndex - 1, :);
+    end
+    optX(i, i - length(tempXX) + 1 : i) = tempXX; 
+    
+    %% heuristic adjustment, change plan [1 0 0 1 0] to [1 0 1 1 0]，若调，后面也调，放在j 循环里
+    if i > 1       %启发式调整，%起始点 m~k,k+1~n  %调用子程序,情形1或许也能在这里调整
+        n = i;
+        if n == N %最后一个点不用缺货减少
+            needLossless = 0;
+        else
+            needLossless = 1;
+        end
+        if sum(optX(i, :)) > 1  % find two consecutive ordering cycle
+            xNum=0;
+            for jj=i:-1:1
+                if xNum==0&&optX(i,jj)==1
+                    k=jj-1;xNum=1;continue;
+                end
+                if xNum==1&&optX(i,jj)==1
+                    m=jj;break;
+                end
+            end
+            %既定生产安排
+            xMk=zeros(1,k-m+1);xMk(1)=1;xKn=zeros(1,n-k);xKn(1)=1;lastX=[xMk,xKn];
+            lastB=BB(k+1,n);preFinalW=WW(k+1,n);lastSatDemand=satDemand{k+1,n};
+            finalB=lastB; %
+            %初始资金库存
+            [~,xStart]=find(lastX==1);xLast=diff(xStart);x1=m+xStart(1)-1;k1=x1+xLast-1; 
+            [iniB,iniW]=GetIniBW(lastX,iniBIJ(x1,k1),iniWIJ(x1,k1),BB(m:n,m:n),WW(m:n,m:n));
+            for iChange=2:k-m+1
+                xMk=zeros(1,k-m+1);xMk(1)=1;xMk(1)=1;xMk(iChange)=1;xMn=[xMk,xKn];%生产变化
+                if L-m+1>0
+                    thisL=L-m+1;ratePay=finalRatePay;
+                else
+                    thisL=0;ratePay=0;
+                end  
+                [tempXX,tempBB,thisTempSatDemand,thisFinalIniB,thisFinalIniW,tempWW]=ComputeMkn(xMn,lastX,iniB,iniW,lastB,...
+                    preFinalW,lastSatDemand,d(m:i),p(m:i),c(m:i),s(m:i),h(m:i),beita,needLossless,thisL,ratePay);
+                if tempBB>finalB+1e-2 %选一个最大的再更新
+                    BB(k+1,n)=tempBB;WW(k+1,n)=tempWW;XX{k+1,n}=tempXX;optX(n,n-length(tempXX)+1:n)=tempXX;
+                    finalB=tempBB;tempSatDemand=thisTempSatDemand;finalXX=tempXX;
+                    finalIniB=thisFinalIniB;finalIniW=thisFinalIniW;
+                end
+            end %optX(k,m:k)=optX(i,m:k);i=k;%可能会用到,也可能用不到 
+            if finalB>lastB+1e-4
+                satDemand{k+1,n}=tempSatDemand;
+                [iniBIJ(m:n,m:n),iniWIJ(m:n,m:n)]=UpdateIniBW(finalXX,finalIniB,finalIniW,iniBIJ(m:n,m:n),iniWIJ(m:n,m:n));
+                for jj=n+1:N
+                    xnj=zeros(1,jj-n);xMn=[XX{k+1,n},xnj];
+                    [~,xStart]=find(xMn==1);xLast=diff(xStart);x1=m+xStart(1)-1;k1=x1+xLast(1)-1; % 第一个 production cycle
+                    [iniB,iniW]=GetIniBW(xMn,iniBIJ(x1,k1),iniWIJ(x1,k1),BB(m:jj,m:jj),WW(m:jj,m:jj));% 得到初始资金库存
+                    lastSatDemand=satDemand{k+1,jj};lastX=XX{k+1,jj};preFinalW=WW(k+1,jj);lastB=BB(k+1,jj);
+                    [tempXX,tempBB,thisTempSatDemand,thisFinalIniB,thisFinalIniW,tempWW]=ComputeMkn(xMn,lastX,iniB,iniW,lastB,preFinalW,lastSatDemand,d(m:jj),p(m:jj),c(m:jj),s(m:jj),h(m:jj),beita,1,thisL,ratePay);
+                    if tempBB>lastB+1e-2 %选一个最大的再更新
+                        BB(k+1,jj)=tempBB;WW(k+1,jj)=tempWW;XX{k+1,jj}=tempXX;optX(k+1,jj-length(tempXX)+1:jj)=tempXX;
+                        satDemand{k+1,jj}=thisTempSatDemand;finalXX=tempXX;
+                        finalIniB=thisFinalIniB;finalIniW=thisFinalIniW;
+                        [iniBIJ(m:jj,m:jj),iniWIJ(m:jj,m:jj)]=UpdateIniBW(finalXX,finalIniB,finalIniW,iniBIJ(m:jj,m:jj),iniWIJ(m:jj,m:jj));
+                    end
+                end
+            end
+        end
+    end
+    
+    %% heuristic adjustment, change plan [1 0 0] to [0 1 0]
+    if (sum(optX(i,:)) == 1) && i > 1
+        [~, xStart] = find(optX(i, :) == 1);
+        if xStart(1) == 1
+            n = i;
+            lastX = optX(i, 1 : i);
+            lastB = BB(1,n); lastW = WW(1, n); lastSatDemand = satDemand{xStart(end), n};
+            finalB = lastB;
+            for iChange = xStart(1) + 1 : i
+                m = iChange; xMn = zeros(1, n - m + 1); xMn(1) = 1;
+                [~, ~, tempW] = ComputeEd(zeros(1, m - 1), d(1 : m - 1), 0, beta); iniW = tempW(end);
+                if m <= L
+                    iniB = B0;
+                else
+                    iniB = B0 - loanPayBack;
+                end
+                if L - m + 1 > 0
+                    thisL = L - m + 1;
+                    ratePay = loanPayBack;
+                else
+                    thisL = 0; ratePay = 0;
+                end
+                [thisTempXX, thisTempBB, thisTempSatDemand, thisFinalIniB, thisFinalIniW, thisTempWW] = ComputeMkn(xMn,...
+                                         lastX, iniB, iniW, lastB, lastW, lastSatDemand, d(m : n), p(m : n), c(m : n), s(m : n), h(m : n), beta, 1, thisL, ratePay); 
+                if thisTempBB > finalB + 1e-2 % choose a plan having more cash
+                    tempXX = thisTempXX; finalB = thisTempBB; finalIniB = thisFinalIniB; finalIniW = thisFinalIniW;
+                    tempSatDemand = thisTempSatDemand; tempWW = thisTempWW; iCh = iChange;
+                end
+            end
+            if finalB > lastB + 1e-4
+                BB(iCh,n) = finalB; XX{iCh,n} = tempXX; optX(n,:) = 0; optX(n, n - length(tempXX) + 1 : n) = tempXX;
+                satDemand{iCh, n} = tempSatDemand; WW(iCh, n) = tempWW;
+                [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(xMn, finalIniB, finalIniW, iniBIJ(m : n, m : n),iniWIJ(m : n, m : n)); % update initial cash and initial lost sale
+            end
+        end
+    end
+    
+    
+    
+    i = i + 1; 
 end
 
 %% backward computing optimal ordering plan, satifying quantity and effective demand

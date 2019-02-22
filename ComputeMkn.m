@@ -62,6 +62,52 @@ if exitflag ~= 1
     end
 end
 
+%% recompute effective demand and isLossMuch, and recall linprog again to compute satDemand; compare the total three results
+[~, isLossMuch, ~] = ComputeEd(satDemand, d, iniW, beta);
+ub(logical(isLossMuch > 0.5)) = 0;   
+if sum(isLossMuch) > 0 % in this situation, compute another twice 
+    [f, A, b] = ComputefAb(xMn, iniB, iniW, lastW, d(m : n), p(m : n), c(m : n), s(m : n), h(m : n), beta, isLossMuch, needLossless, thisLoanLength, ratePay);
+    [satDemand1, fval1, exitflag1] = linprog(f, A, b, [], [], lb, ub, [], options);
+    % compute isLossMuch again
+    [~, x1] = find(isLossMuch == 1); isLossMuch(x1(1)) = 0;
+    ub = d; ub(logical(isLossMuch > 0.5)) = 0;
+    [f, A, b] = ComputefAb(xMn, iniB, iniW, lastW, d(m : n), p(m : n), c(m : n), s(m : n), h(m : n), beta, isLossMuch, needLossless, thisLoanLength, ratePay);
+    [satDemand2, fval2, exitflag2] = linprog(f, A, b, [], [], lb, ub, [], options);
+    if exitflag2 == 1
+        if exitflag1 ~= 1 || fval2 < fval1
+            satDemand1  = satDemand2; fval1 = fval2; exitflag1 = exitflag2;
+        end
+    end
+    if exitflag1 == 1
+        if exitflag ~= 1 || fval1 < fval 
+            fval = fval1; satDemand = satDemand1; exitflag = 1;
+        end
+    else
+        % recompute the second cycle t2~n
+        if sum(xMn) == 2
+            t2 = orderIndex(end);
+            [f2, A2, b2] = ComputefAb(xMn(t2 : n), thisIniB(end), thisIniW(end), lastW, d(t2 : n), p(t2 : n), c(t2 : n), s(t2 : n), h(t2 :n), beta, ...
+                                       zeros(1, n - t2 + 1), needLossless, thisLoanLength, ratePay);
+            lb = zeros(1, n - t2 + 1); ub = d(t2 : n);
+            [satDemand2, fval2, exitflag2] = linprog(f2, A2, b2, [], [], lb, ub, [], options);
+            if exitflag2 == 1
+                if exitflag ~= 1 || fval2 < fval1 
+                    fval = fval2 - thisIniB(end) + iniB - s(t2);
+                    satDemand = [lastSatDemand(1 : t2 - 1); satDemand2]; % merge the results
+                    exitflag = 1;
+                end
+            end
+        end
+    end
+end
+% compute final cash
+if exitflag == 1
+    finalB = -fval - s(m : n) * xMn'+ iniB;
+    if thisL > 0 && n >= thisLoanLength
+        finalB = finalB - ratePay;
+    end
+end
+
 %% check whether cash is increasing or not, and update
 orderLastLength = diff(orderIndex);
 orderLastLength(end + 1) = n - m - orderIndex(end) + 2; 
