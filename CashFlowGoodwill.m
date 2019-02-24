@@ -50,6 +50,75 @@ whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0; % recording whether orderin
 i = 1;
 while i <= T
     for j = i : T
+        %% change [0 0 1] to [0 1 1]
+        if i == 1 || sum(optX(i - 1, :)) == 0
+            if i == 1   
+                iniW = 0; % initial lost sale
+            else
+                [~, ~, tempW] = ComputeEd(zeros(1, i - 1), d(1 : i - 1), 0, beta);
+                iniW = tempW(end); 
+            end
+            if i == j
+                lastSatDemand = []; lastB = optIniB(i); lastX = [];
+            else
+                lastB = BB(i, j - 1); lastSatDemand = satDemand{i, j - 1}; lastX = XX{i, j - 1};
+            end
+            if sum(lastX)==2 % compare with the last change && lastB > max(BB(1 : j - 1, j - 1)) - 1e-2 %上个阶段调整了,并且调整后是所在列最大, 要比较
+                [~, xStart] = find(lastX == 1); xLength = length(lastX);
+                m = j - xLength; n = j; k = m + xStart(2) - 1; % 最后一个 production cycle
+                if rL - m + 1 > 0
+                    thisL = rL - m + 1; ratePay = loanPayBack;
+                else
+                    thisL = 0; ratePay = loanPayBack;
+                end
+                iniB = zeros(1, 2); iniW = iniB;
+                if m <= rL
+                    iniB(1) = B0;
+                else
+                    iniB(1) = B0 - loanPayBack;
+                end
+                iniB(2) = iniBIJ(k, m + xLength - 1); iniW(1) = iniWIJ(m, k - 1); iniW(2) = iniWIJ(k, m + xLength - 1);
+                xIJ = [lastX, 0]; preFinalW = [];
+                [XX{i, j}, BB(i, j), satDemand{i, j}, finalIniB, finalIniW, WW(i, j)] = ComputeMkn(xIJ,...
+                    lastX, iniB, iniW, lastB, preFinalW, lastSatDemand, d(m : n), p(m : n), c(m : n), s(m : n), h(m : n), beta, 0, thisL, loanPayBack);
+                if i <= L
+                    iniB = B0;
+                else
+                    iniB = B0 - loanPayBack;
+                end
+                xIJ = zeros(1, j - i + 1); xIJ(1) = 1; iniW = tempW(end); preFinalW=[]; % 既定一个生产安排
+                if rL - i + 1 > 0
+                    thisL = rL - i + 1; ratePay = loanPayBack;
+                else
+                    thisL = 0; ratePay = 0;
+                end
+                [XX2, BB2, satDemand2, finalIniB2, finalIniW2, WW2] = ComputeMkn(xIJ, lastX, iniB, iniW, lastB, preFinalW,...
+                                          lastSatDemand, d(i : j), p(i : j), c(i : j), s(i : j), h(i : j), beta, 0, thisL, ratePay);
+                if BB2 > BB(i, j) + 1e-1    
+                    XX{i, j} = XX2; BB(i, j) = BB2;
+                    satDemand{i, j} = satDemand2;
+                    finalIniB = finalIniB2; finalIniW = finalIniW2; WW(i, j) = WW2;
+                end 
+                tStart = j - length(XX{i, j}) + 1;
+                [iniBIJ(tStart : n, tStart : n), iniWIJ(tStart : n, tStart : n)] = UpdateIniBW(XX{i, j},...
+                           finalIniB, finalIniW, iniBIJ(tStart : n, tStart : n), iniWIJ(tStart : n, tStart : n)); % update initial lost sale and initial cash
+            else
+                if i <= rL
+                    iniB = B0;
+                else
+                    iniB = B0 - loanPayBack;
+                end
+                xIJ = zeros(1, j - i + 1); xIJ(1) = 1; preFinalW = []; % set an ordering plan
+                if rL - i + 1 > 0
+                    thisL = rL - i + 1; ratePay = loanPayBack;
+                else
+                    thisL = 0; ratePay = 0;
+                end
+                [XX{i, j}, BB(i, j), satDemand{i, j}, iniBIJ(i, j), iniWIJ(i, j), WW(i, j)] = ComputeMkn(xIJ, lastX, iniB, iniW, lastB,...
+                    preFinalW, lastSatDemand, d(i : j), p(i : j), c(i : j), s(i : j), h(i : j), beta, 0, thisL, ratePay);
+            end 
+        end
+        
         % compute two ordering cycles in an ordering round
         if i > 1 && sum(optX(i - 1, : )) > 0
             for jj = i - 1 : -1 : 1
@@ -72,20 +141,57 @@ while i <= T
             % round
             if TL - m + 1 > 0
                 thisLoanlength = rL - m + 1;
-                loanPayBack = loanPayBack;
+                loanPayBack = BL*(1 + TL)^rL;
             else
                 thisLoanlength = 0; loanPayBack = 0;
             end
             xMn = zeros(1, n - m + 1); xMn(1) = 1; xMn(k + 2 - m) = 1; % two ordering cycles in an ordering round
             lastW = WW(i, j); % previous lost sale quantity in the last period of cycle i to j
-            [~, xStart] = find(xMn == 1); orderLength = diff(xStart); x1 = m + xStart(1) - 1; k1 = x1 + orderLength - 1; % the first ordering cycle index: m, k1
-            [iniB, iniW] = GetIniBW(xMn, iniBIJ(x1, k1), iniWIJ(x1, k1), BB(m : n, m : n), WW(m : n, m : n)); % get initial cash and initial lost sale in the ordering cycles of the ordering round
+            [~, xStart] = find(xMn == 1); orderLength = diff(xStart); k = m + xStart(1) - 1; k1 = k + orderLength - 1; % the first ordering cycle index: m, k1
+            [iniB, iniW] = GetIniBW(xMn, iniBIJ(k, k1), iniWIJ(k, k1), BB(m : n, m : n), WW(m : n, m : n)); % get initial cash and initial lost sale in the ordering cycles of the ordering round
             [XX{i, j}, BB(i, j), satDemand{i, j}, finalIniB, finalIniW, WW(i, j)] = ComputeMkn(xMn, lastX, iniB, iniW, lastB, lastW, lastSatDemand, d(m : n), p(m : n), c(m : n), s(m : n),h(m : n), beta, 0, thisLoanlength, loanPayBack);
             if sum(XX{i,j}) > 1 % means new ordering cycle is added in the ordering round, so update initial cash and lost sale
                 [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(XX{i, j}, finalIniB, finalIniW, iniBIJ(m : n, m : n), iniWIJ(m : n, m : n));% 更新初始资金库存
             end
         end
         
+       %% heuristic adjustment, change [0, 0, 1] to [0 1 1]
+        if i > 1&& sum(optX(i - 1, :)) == 0 && j - i < 4 % avoid too many
+            iniX = XX{i, j};
+            if sum(iniX) <= 1 
+                iniSatDemand = satDemand{i, j};
+                for m = max(1, i - 6) : i - 1  % means not necessary to change too many
+                    k = i - 1; n = j;  % m~k, k + 1 ~ n,
+                    if m == 1
+                        thisIniW = 0;
+                    else
+                        [~, ~, tempW] = ComputeEd(zeros(1, m - 1), d(1 : m - 1), 0, beta);
+                        thisIniW = tempW(end);
+                    end
+                    lastSatDemand = [zeros(k - m + 1, 1); iniSatDemand];
+                    lastX = zeros(1, n - m + 1); lastX(i - m + 1 : n - m + 1) = iniX;
+                    preFinalW = WW(i, j); lastB = BB(i,j);
+                    xMn = zeros(1, n - m + 1); xMn(1) = 1; xMn(i - m + 1) = 1; 
+                    if m <= L
+                        iniB = B0;
+                    else
+                        iniB = B0 - loanPayBack;
+                    end
+                    [iniB, iniW] = GetIniBW(xMn, iniB, thisIniW, BB(m : n, m : n), WW(m : n, m : n));
+                    if rL - m + 1 > 0
+                        thisL = rL - m + 1; ratePay = loanPayBack;
+                    else
+                        thisL = 0; ratePay = 0;
+                    end
+                    [tempXX, tempBB, tempSatDemand, finalIniB, finalIniW, WW(i,j)] = ComputeMkn(xMn, lastX, iniB, iniW, lastB,...
+                                                     preFinalW, lastSatDemand, d(m : n), p(m : n), c(m : n), s(m : n), h(m : n), beta, 1, thisL, ratePay);
+                    if tempBB > lastB + 1e-2
+                        XX{i, j} = tempXX; BB(i, j) = tempBB; satDemand{i, j} = tempSatDemand;
+                        [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(XX{i, j}, finalIniB, finalIniW, iniBIJ(m : n, m : n), iniWIJ(m : n, m :n));
+                    end
+                end
+            end
+        end
 
     end % the loop for j
     
@@ -133,8 +239,8 @@ while i <= T
             lastB = BB(k+1, n); lastW = WW(k + 1, n); lastSatDemand = satDemand{k + 1, n};
             finalB = lastB; 
             % initial cash and lost sale
-            [~, xStart] = find(lastX == 1); orderLength = diff(xStart); x1 = m + xStart(1) - 1; k1 = x1 + orderLength-1; % the first ordering cycle
-            [iniB, iniW] = GetIniBW(lastX, iniBIJ(x1, k1 ), iniWIJ(x1, k1), BB(m : n, m : n), WW(m : n, m : n));
+            [~, xStart] = find(lastX == 1); orderLength = diff(xStart); k = m + xStart(1) - 1; k1 = k + orderLength-1; % the first ordering cycle
+            [iniB, iniW] = GetIniBW(lastX, iniBIJ(k, k1 ), iniWIJ(k, k1), BB(m : n, m : n), WW(m : n, m : n));
             for iChange = 2 : k - m + 1
                 xMk = zeros(1, k - m + 1); xMk(1) = 1; xMk(1) = 1; xMk(iChange) = 1; xMn = [xMk, xKn]; 
                 if rL - m + 1 > 0
@@ -155,8 +261,8 @@ while i <= T
                 [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(finalXX, finalIniB, finalIniW, iniBIJ(m : n, m : n), iniWIJ(m : n, m : n));
                 for jj = n + 1 : N
                     xnj = zeros(1, jj - n); xMn = [XX{k + 1, n}, xnj];
-                    [~, xStart] = find(xMn == 1); orderLength = diff(xStart); x1 = m + xStart(1) - 1; k1 = x1 + orderLength(1) - 1; % the first ordering cycle
-                    [iniB, iniW] = GetIniBW(xMn, iniBIJ(x1, k1), iniWIJ(x1, k1), BB(m : jj, m : jj), WW(m : jj, m : jj));
+                    [~, xStart] = find(xMn == 1); orderLength = diff(xStart); k = m + xStart(1) - 1; k1 = k + orderLength(1) - 1; % the first ordering cycle
+                    [iniB, iniW] = GetIniBW(xMn, iniBIJ(k, k1), iniWIJ(k, k1), BB(m : jj, m : jj), WW(m : jj, m : jj));
                     lastSatDemand = satDemand{k + 1, jj}; lastX = XX{k + 1, jj}; lastW = WW(k + 1, jj); lastB = BB(k + 1, jj);
                     [tempXX, tempBB, thisTempSatDemand, thisFinalIniB, thisFinalIniW, tempWW] = ...
                         ComputeMkn(xMn, lastX, iniB, iniW, lastB, lastW, lastSatDemand, d(m : jj), p(m : jj), c(m : jj), s(m : jj),...
@@ -190,7 +296,7 @@ while i <= T
                 end
                 if rL - m + 1 > 0
                     thisLoanlength = rL - m + 1;
-                    loanPayBack = loanPayBack;
+                    loanPayBack = BL*(1 + TL)^rL;
                 else
                     thisLoanlength = 0; loanPayBack = 0;
                 end
@@ -207,10 +313,7 @@ while i <= T
                 [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(xMn, finalIniB, finalIniW, iniBIJ(m : n, m : n),iniWIJ(m : n, m : n)); % update initial cash and initial lost sale
             end
         end
-    end
-    
-    
-    
+    end   
     i = i + 1; 
 end
 
