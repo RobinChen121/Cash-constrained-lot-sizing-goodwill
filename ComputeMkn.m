@@ -103,7 +103,7 @@ end
 % compute final cash
 if exitflag == 1
     finalB = -fval - s(m : n) * xMn'+ iniB;
-    if thisL > 0 && n >= thisLoanLength
+    if thisLoanLength > 0 && n >= thisLoanLength
         finalB = finalB - ratePay;
     end
 end

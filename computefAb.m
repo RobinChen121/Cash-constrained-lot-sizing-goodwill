@@ -114,9 +114,9 @@ while i <= n
     end
     i=i+1;
 end
-if isLossMuch(n)~=1
-    tempBetaArray=BeitaZhengfu(n-preIndexLossMuch,beita);
-    A(n+xSum+n-1,preIndexLossMuch+1:n)=tempBetaArray; b(n+xSum+n-1)=Ed(preIndexLossMuch+1:n)*tempBetaArray';
+if isLossMuch(n) ~= 1
+    tempBetaArray = BetaArray(n - preIndexLossMuch, beta);
+    A(n + xSum + n - 1, preIndexLossMuch + 1 : n) = tempBetaArray; b(n + xSum + n - 1) = Ed(preIndexLossMuch + 1 : n) * tempBetaArray';
 end
 
 %% one constraint: can not lose more than the previous plan

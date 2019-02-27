@@ -69,14 +69,16 @@ for i = 1 : T
         fprintf(fid, '\n');
     end
 end
-fprintf ('Solution value of the forward algorithm is = %f \n', B(T));
-if beta>0
+if beta > 0
+    fprintf ('Solution value of the forward algorithm with goodwill loss is = %f \n', B(T));
     if whetherAdjustPlan == 1
         fprintf ('adjust the plan\n');
     end
     if whetherMoveOrderQuantity == 1
         fprintf ('move the ordering quantity\n');
     end
+else
+    fprintf ('Solution value of the forward algorithm without goodwill loss is = %f \n', B(T));
 end
 fclose(fid); 
 end

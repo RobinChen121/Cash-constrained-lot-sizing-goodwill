@@ -34,7 +34,7 @@ function [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlow
 T = length(d);
 BB = zeros(T, T); B = zeros(1, T); y = zeros(1, T);
 B0 = B0 + BL;
-loanPayBack = BL*(1 + TL)^rL; % quantity of loan and intersts needing to pay back
+loanPayBack = BL*(1 + rL)^TL; % quantity of loan and intersts needing to pay back
 optIniB = zeros(1, T + 1); % optimal initial cash for each period
 optIniB(1) = B0; 
 optX = zeros(T, T);  % optimal ordering plan till each period t
@@ -172,7 +172,7 @@ while i <= T
                     lastX = zeros(1, n - m + 1); lastX(i - m + 1 : n - m + 1) = iniX;
                     preFinalW = WW(i, j); lastB = BB(i,j);
                     xMn = zeros(1, n - m + 1); xMn(1) = 1; xMn(i - m + 1) = 1; 
-                    if m <= L
+                    if m <= rL
                         iniB = B0;
                     else
                         iniB = B0 - loanPayBack;
@@ -196,7 +196,7 @@ while i <= T
     end % the loop for j
     
      %% compute optX
-    if i > 1 && i < N
+    if i > 1 && i < T
         [sortB , ia, ~] = unique(round(BB(1 : i, i))); % return no repetition of an array
         if length(sortB) > 1
             if (sortB(end) - sortB(end - 1)) / sortB(end) < 0.01 && WW(ia(end), i) > 10 && WW(ia(end -1 ), i) < 1 % if another one final cash very close, but lost sale is less, choose it
@@ -219,7 +219,7 @@ while i <= T
     %% heuristic adjustment, change plan [1 0 0 1 0] to [1 0 1 1 0]
     if i > 1       %启发式调整，%起始点 m~k,k+1~n  %调用子程序,情形1或许也能在这里调整
         n = i;
-        if n == N % the last period does not need loss less
+        if n == T % the last period does not need loss less
             needLossless = 0;
         else
             needLossless = 1;
@@ -259,7 +259,7 @@ while i <= T
             if finalB > lastB + 1e-4 % check whether [1 0 0 1 0 1 0 0 1 0] is less than  [1 0 0 0 1 0 1 0 0 0 0], sometimes not necessary
                 satDemand{k + 1, n} = tempSatDemand;
                 [iniBIJ(m : n, m : n), iniWIJ(m : n, m : n)] = UpdateIniBW(finalXX, finalIniB, finalIniW, iniBIJ(m : n, m : n), iniWIJ(m : n, m : n));
-                for jj = n + 1 : N
+                for jj = n + 1 : T
                     xnj = zeros(1, jj - n); xMn = [XX{k + 1, n}, xnj];
                     [~, xStart] = find(xMn == 1); orderLength = diff(xStart); k = m + xStart(1) - 1; k1 = k + orderLength(1) - 1; % the first ordering cycle
                     [iniB, iniW] = GetIniBW(xMn, iniBIJ(k, k1), iniWIJ(k, k1), BB(m : jj, m : jj), WW(m : jj, m : jj));

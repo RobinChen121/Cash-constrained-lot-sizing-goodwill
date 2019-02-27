@@ -29,7 +29,7 @@ w = Ed;
 Ed(1) = max(0, d(1) - beta * iniW);
 for i = 1 : N
     if i > 1
-        if d(i) - beita * w(i - 1) > 1e-2
+        if d(i) - beta * w(i - 1) > 1e-2
             Ed(i) = d(i) -beta * w(i - 1);
         else
             isLossTooMuch(i) = 1; 
