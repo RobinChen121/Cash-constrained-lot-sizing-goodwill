@@ -16,7 +16,7 @@ function main
 % BL: credit-based loan
 % TL: length of credit-based loan
 % rL: interest rate of loan
-% r : deposite interest rate
+% r0: deposite interest rate
 % pai: unit penalty cost for lost sale
 %
 %
@@ -52,7 +52,7 @@ function main
 %% or reading some parameter values from txt file in the current directory
 string = input('please input your file name: \n', 's'); % for example, d_12-84.txt
 TL = 6; rL = 0.05;
-r = 0.0006;
+r0 = 0.0006;
 fidin = fopen(string);
 if fidin == -1
     disp('没有这个数据文件\n');
@@ -104,9 +104,9 @@ pai = zeros(1,T);
 % whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
 % if beta > 0
 %     [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlowGoodwill(d(1 : T), p(1 : T),...
-%                               s(1 : T), c(1 : T), h(1 : T), beta, B0, BL, TL, rL, r); % there is no unit penalty cost for lost sale for this model
+%                               s(1 : T), c(1 : T), h(1 : T), beta, B0, BL, TL, rL, r0); % there is no unit penalty cost for lost sale for this model
 % else
-%     [x, y, w, I, B] = CashFlowNoGoodwill(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), B0, BL, TL, rL, r);
+%     [x, y, w, I, B] = CashFlowNoGoodwill(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), B0, BL, TL, rL, r0);
 % end
 % toc
 % 
@@ -117,7 +117,7 @@ pai = zeros(1,T);
 %% run the mip model by cplex
 tic
 fprintf ('\nRun MIP: \n');
-[x, y, w, I, B] = MipCplex(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), beta, B0, BL, TL, rL, r);
+[x, y, w, I, B] = MipCplex(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), beta, B0, BL, TL, rL, r0);
 toc
 
 %% output results to txt file

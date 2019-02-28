@@ -16,7 +16,7 @@ function [x, y, w, I, B] = MipCplex(d, p, s, c, h, ~, beta, B0, BL, TL, rL, r)
 % TL: length of credit-based loan
 % rL: interest rate of loan
 % pai: unit penalty cost for lost sale, in the mip model, there is no pai
-% r: deposite interest rate
+% r0: deposite interest rate
 
 
 % author: Zhen Chen
@@ -66,7 +66,7 @@ tempOne(1,1)=0;
 
 %% f, Aineq, bineq
 % decision variables: x, y , w, Ed, delta
-f = [s, cumH + c, cumH + p, -cumH - p, zeros(1, T)]'; % objective function
+f = [s, cumH + c, cumH + p, -cumH - p, zeros(1, T)]'/ (1 + r0)^; % objective function
 M1 = ones(1, T) * sum(d);
 M2 = sum(d);
 B0 = BL + B0;
