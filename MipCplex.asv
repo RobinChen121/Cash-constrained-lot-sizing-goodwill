@@ -1,4 +1,4 @@
-function [x, y, w, I, B] = MipCplex(d, p, s, c, h, ~, beta, B0, BL, TL, rL, r)
+function [x, y, w, I, B] = MipCplex(d, p, s, c, h, ~, beta, B0, BL, TL, rL, r0)
 
 % ***************************************************************************
 % Description: compute the cash flow via Cplex
@@ -16,7 +16,7 @@ function [x, y, w, I, B] = MipCplex(d, p, s, c, h, ~, beta, B0, BL, TL, rL, r)
 % TL: length of credit-based loan
 % rL: interest rate of loan
 % pai: unit penalty cost for lost sale, in the mip model, there is no pai
-% r: deposite interest rate
+% r0: deposite interest rate
 
 
 % author: Zhen Chen
@@ -65,7 +65,9 @@ tempOne=diag(ones(1,T));
 tempOne(1,1)=0;
 
 %% f, Aineq, bineq
-f = [s, cumH + c, cumH + p, -cumH - p, zeros(1, T)]'; % objective function
+% decision variables: x, y , w, Ed, delta
+r0Array = (1 / (1 + r0)) .^ (0 : T);
+f = [s, cumH + c, cumH + p, -cumH - p, zeros(1, T)]'.* r0Array; % objective function
 M1 = ones(1, T) * sum(d);
 M2 = sum(d);
 B0 = BL + B0;
@@ -110,11 +112,11 @@ end
 %% solve
 options = cplexoptimset;
 options.Display = 'off';
-options.MaxIter=750000;
-options.MaxTime=18000;
-[x, fval, ~, ~] = cplexmilp (f, Aineq, bineq, Aeq, beq,...
+options.MaxIter = 750000;
+options.MaxTime = 18000;
+[x, fval, ~, ~] = cplexmilp(f, Aineq, bineq, Aeq, beq,...
     [ ], [ ], [ ], lb, ub, ctype, [ ], options);
-%fprintf ('Solution value = %f \n', - fval + B0 - BL*(1+rL)^TL);
+%fprintf ('Solution value = %f \n', - fval + (B0 - BL*(1+rL)^TL) / (1 + r0)^T);
 
 %% output x, y, w, I, B
 for i = 1 : T
@@ -150,5 +152,6 @@ for t = 2 : T
         B(t) = B(t) - BL * (1 + rL)^TL;
     end
 end
+
 x = x(1 : T);
 end

@@ -1,4 +1,4 @@
-function [x, y, w, I, B] = MipCplex(d, p, s, c, h, ~, beta, B0, BL, TL, rL, r)
+function [x, y, w, I, B] = MipCplex(d, p, s, c, h, ~, beta, B0, BL, TL, rL, r0)
 
 % ***************************************************************************
 % Description: compute the cash flow via Cplex
@@ -66,7 +66,8 @@ tempOne(1,1)=0;
 
 %% f, Aineq, bineq
 % decision variables: x, y , w, Ed, delta
-f = [s, cumH + c, cumH + p, -cumH - p, zeros(1, T)]'/ (1 + r0)^; % objective function
+r0Array = (1 / (1 + r0)) .^ (1 : T);
+f = [s .* r0Array, (cumH + c) .* r0Array, (cumH + p) .* r0Array, (-cumH - p) .* r0Array, zeros(1, T)]'; % objective function
 M1 = ones(1, T) * sum(d);
 M2 = sum(d);
 B0 = BL + B0;
@@ -113,9 +114,9 @@ options = cplexoptimset;
 options.Display = 'off';
 options.MaxIter = 750000;
 options.MaxTime = 18000;
-[x, fval, ~, ~] = cplexmilp (f, Aineq, bineq, Aeq, beq,...
+[x, fval, ~, ~] = cplexmilp(f, Aineq, bineq, Aeq, beq,...
     [ ], [ ], [ ], lb, ub, ctype, [ ], options);
-%fprintf ('Solution value = %f \n', - fval + B0 - BL*(1+rL)^TL);
+%fprintf ('Solution value = %f \n', - fval + (B0 - BL*(1+rL)^TL) / (1 + r0)^T);
 
 %% output x, y, w, I, B
 for i = 1 : T
@@ -151,5 +152,6 @@ for t = 2 : T
         B(t) = B(t) - BL * (1 + rL)^TL;
     end
 end
+B = B .* r0Array;
 x = x(1 : T);
 end

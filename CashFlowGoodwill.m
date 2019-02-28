@@ -1,4 +1,4 @@
-function [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlowGoodwill(d, p, s, c, h, beta, B0, BL, TL, rL)
+function [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlowGoodwill(d, p, s, c, h, beta, B0, BL, TL, rL, r0)
 
 % ***************************************************************************
 % Description: compute the cash flow under the situation of goodwill
