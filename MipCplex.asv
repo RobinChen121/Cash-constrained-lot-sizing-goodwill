@@ -65,7 +65,6 @@ tempOne=diag(ones(1,T));
 tempOne(1,1)=0;
 
 %% f, Aineq, bineq
-% decision variables: x, y , w, Ed, delta
 f = [s, cumH + c, cumH + p, -cumH - p, zeros(1, T)]'; % objective function
 M1 = ones(1, T) * sum(d);
 M2 = sum(d);
@@ -111,8 +110,8 @@ end
 %% solve
 options = cplexoptimset;
 options.Display = 'off';
-options.MaxIter = 750000;
-options.MaxTime = 18000;
+options.MaxIter=750000;
+options.MaxTime=18000;
 [x, fval, ~, ~] = cplexmilp (f, Aineq, bineq, Aeq, beq,...
     [ ], [ ], [ ], lb, ub, ctype, [ ], options);
 %fprintf ('Solution value = %f \n', - fval + B0 - BL*(1+rL)^TL);

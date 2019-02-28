@@ -104,7 +104,7 @@ while i <= n
             A(rowIndex, preIndexLossMuch + 1 : i) = tempBetaArray; 
             b(rowIndex) = Ed(preIndexLossMuch + 1 : i) * tempBetaArray';
         else
-            tempBetaArray = BeitaZhengfu(i - preIndexLossMuch, beita);
+            tempBetaArray = BetaArray(i - preIndexLossMuch, beta);
             A(rowIndex, preIndexLossMuch + 1 : i) = tempBetaArray;
             b(rowIndex) = Ed(preIndexLossMuch + 1 : i) * tempBetaArray' - 2 * d(i + 1); % effective demand constraint for period i
             A(rowIndex + 1, i + 1) = 1; % effective demand constraint for period i + 1

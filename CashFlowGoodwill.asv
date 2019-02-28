@@ -81,7 +81,7 @@ while i <= T
                 xIJ = [lastX, 0]; preFinalW = [];
                 [XX{i, j}, BB(i, j), satDemand{i, j}, finalIniB, finalIniW, WW(i, j)] = ComputeMkn(xIJ,...
                     lastX, iniB, iniW, lastB, preFinalW, lastSatDemand, d(m : n), p(m : n), c(m : n), s(m : n), h(m : n), beta, 0, thisL, loanPayBack);
-                if i <= TL
+                if i <= L
                     iniB = B0;
                 else
                     iniB = B0 - loanPayBack;
