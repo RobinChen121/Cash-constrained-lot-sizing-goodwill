@@ -110,7 +110,7 @@ options.MaxIter = 750000;
 options.MaxTime = 18000;
 [x, fval, ~, ~] = cplexmilp(f, Aineq, bineq, Aeq, beq,...
     [ ], [ ], [ ], lb, ub, ctype, [ ], options);
-fprintf ('Solution value = %f \n', -fval + B0 / (1 + r0)^T - BL * ((1 + rL)^TL - 1));
+fprintf ('Solution value = %f \n', -fval + (B0 + BL - BL * ((1 + rL)^TL))/ (1 + r0)^T);
 
 %% output x, y, w, I, B
 for i = 1 : T

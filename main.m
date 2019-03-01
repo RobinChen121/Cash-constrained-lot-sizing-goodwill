@@ -47,10 +47,10 @@ beta = 0.5;
 BL = 1000;
 TL = 4;
 rL = 0.05;
-T = 8;%length(d);
+T = length(d);
 pai = zeros(1, T); 
-r0 = 0;
-Td = 0;
+r0 = 0.0006;
+Td = 2;
 whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
 
 %% or reading some parameter values from txt file in the current directory

@@ -87,7 +87,7 @@ while i <= T
                 else
                     iniB = B0 - loanPayBack;
                 end
-                xIJ = zeros(1, j - i + 1); xIJ(1) = 1; iniW = tempW(end); preFinalW=[]; % 既定一个生产安排
+                xIJ = zeros(1, j - i + 1); xIJ(1) = 1; iniW = tempW(end); preFinalW=[]; % set an ordering plan
                 if TL - i + 1 > 0
                     thisL = TL - i + 1; ratePay = loanPayBack;
                 else
@@ -409,7 +409,7 @@ for t = 2 : T
         B(t) = B(t) - loanPayBack;
     end
 end 
-r0Array = (1 / (1 + r0)) .^ (1 : T);
+%r0Array = (1 / (1 + r0)) .^ (1 : T);
 B(T) = B(T) / (1 + r0)^T;
 % B(T) = max(BB(1:T, T));
 end
