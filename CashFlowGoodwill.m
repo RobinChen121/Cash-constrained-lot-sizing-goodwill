@@ -1,4 +1,4 @@
-function [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlowGoodwill(d, p, s, c, h, beta, B0, BL, TL, rL, r0)
+function [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlowGoodwill(d, p, s, c, h, beta, B0, BL, TL, rL, r0, Td)
 
 % ***************************************************************************
 % Description: compute the cash flow under the situation of goodwill
@@ -15,6 +15,7 @@ function [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlow
 % beta: goodwill loss rate
 % BL: credit-based loan
 % TL: length of credit-based loan
+% Td: payment delay length from customers
 % rL: interest rate of loan
 %
 %
@@ -63,16 +64,16 @@ while i <= T
             else
                 lastB = BB(i, j - 1); lastSatDemand = satDemand{i, j - 1}; lastX = XX{i, j - 1};
             end
-            if sum(lastX)==2 % compare with the last change && lastB > max(BB(1 : j - 1, j - 1)) - 1e-2 %上个阶段调整了,并且调整后是所在列最大, 要比较
+            if sum(lastX) == 2 % compare with the last change && lastB > max(BB(1 : j - 1, j - 1)) - 1e-2 %上个阶段调整了,并且调整后是所在列最大, 要比较
                 [~, xStart] = find(lastX == 1); xLength = length(lastX);
                 m = j - xLength; n = j; k = m + xStart(2) - 1; % 最后一个 production cycle
-                if rL - m + 1 > 0
-                    thisL = rL - m + 1; ratePay = loanPayBack;
+                if TL - m + 1 > 0
+                    thisL = TL - m + 1; ratePay = loanPayBack;
                 else
                     thisL = 0; ratePay = loanPayBack;
                 end
                 iniB = zeros(1, 2); iniW = iniB;
-                if m <= rL
+                if m <= TL
                     iniB(1) = B0;
                 else
                     iniB(1) = B0 - loanPayBack;
@@ -87,8 +88,8 @@ while i <= T
                     iniB = B0 - loanPayBack;
                 end
                 xIJ = zeros(1, j - i + 1); xIJ(1) = 1; iniW = tempW(end); preFinalW=[]; % 既定一个生产安排
-                if rL - i + 1 > 0
-                    thisL = rL - i + 1; ratePay = loanPayBack;
+                if TL - i + 1 > 0
+                    thisL = TL - i + 1; ratePay = loanPayBack;
                 else
                     thisL = 0; ratePay = 0;
                 end
@@ -141,7 +142,7 @@ while i <= T
             % round
             if TL - m + 1 > 0
                 thisLoanlength = TL - m + 1;
-                ratePay = BL*(1 + TL)^rL;
+                ratePay = BL*(1 + rL)^TL;
             else
                 thisLoanlength = 0; ratePay = 0;
             end
@@ -157,7 +158,7 @@ while i <= T
         end
         
        %% heuristic adjustment, change [0, 0, 1] to [0 1 1]
-        if i > 1&& sum(optX(i - 1, :)) == 0 && j - i < 4 % avoid too many
+        if i > 1 && sum(optX(i - 1, :)) == 0 && j - i < 4 % avoid too many
             iniX = XX{i, j};
             if sum(iniX) <= 1 
                 iniSatDemand = satDemand{i, j};
@@ -173,7 +174,7 @@ while i <= T
                     lastX = zeros(1, n - m + 1); lastX(i - m + 1 : n - m + 1) = iniX;
                     preFinalW = WW(i, j); lastB = BB(i,j);
                     xMn = zeros(1, n - m + 1); xMn(1) = 1; xMn(i - m + 1) = 1; 
-                    if m <= rL
+                    if m <= TL
                         iniB = B0;
                     else
                         iniB = B0 - loanPayBack;
@@ -244,8 +245,8 @@ while i <= T
             [iniB, iniW] = GetIniBW(lastX, iniBIJ(k, k1 ), iniWIJ(k, k1), BB(m : n, m : n), WW(m : n, m : n));
             for iChange = 2 : k - m + 1
                 xMk = zeros(1, k - m + 1); xMk(1) = 1; xMk(1) = 1; xMk(iChange) = 1; xMn = [xMk, xKn]; 
-                if rL - m + 1 > 0
-                    thisLoanlength = rL - m + 1; loanPayBack = BL*(1 + TL)^rL;
+                if TL - m + 1 > 0
+                    thisLoanlength = TL - m + 1; loanPayBack = BL*(1 + TL)^rL;
                 else
                     thisLoanlength = 0; loanPayBack = 0;
                 end  
@@ -290,13 +291,13 @@ while i <= T
             for iChange = xStart(1) + 1 : i
                 m = iChange; xMn = zeros(1, n - m + 1); xMn(1) = 1;
                 [~, ~, tempW] = ComputeEd(zeros(1, m - 1), d(1 : m - 1), 0, beta); iniW = tempW(end);
-                if m <= rL
+                if m <= TL
                     iniB = B0;
                 else
                     iniB = B0 - loanPayBack;
                 end
-                if rL - m + 1 > 0
-                    thisLoanlength = rL - m + 1;
+                if TL - m + 1 > 0
+                    thisLoanlength = TL - m + 1;
                     ratePay = BL*(1 + TL)^rL;
                 else
                     thisLoanlength = 0; ratePay = 0;
@@ -408,5 +409,7 @@ for t = 2 : T
         B(t) = B(t) - loanPayBack;
     end
 end 
+r0Array = (1 / (1 + r0)) .^ (1 : T);
+B(T) = B(T) / (1 + r0)^T;
 % B(T) = max(BB(1:T, T));
 end

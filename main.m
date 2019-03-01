@@ -15,6 +15,7 @@ function main
 % beta: goodwill loss rate
 % BL: credit-based loan
 % TL: length of credit-based loan
+% Td: payment delay length from customers
 % rL: interest rate of loan
 % r0: deposite interest rate
 % pai: unit penalty cost for lost sale
@@ -44,17 +45,19 @@ s = [1000 1000 1000 1000 1000 1000 1000	1000 1000 1000 1000	1000];
 B0 = 5000;
 beta = 0.5;
 BL = 1000;
-TL = 3;
+TL = 4;
 rL = 0.05;
-T = length(d);
+T = 8;%length(d);
 pai = zeros(1, T); 
-r0 = 0.0006;
+r0 = 0;
+Td = 0;
 whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
 
-% %% or reading some parameter values from txt file in the current directory
+%% or reading some parameter values from txt file in the current directory
 % string = input('please input your file name: \n', 's'); % for example, d_12-84.txt
-% TL = 6; rL = 0.05;
+% TL = 8; rL = 0.05;
 % r0 = 0.0006;
+% Td = 2;
 % fidin = fopen(string);
 % if fidin == -1
 %     disp('没有这个数据文件\n');
@@ -105,9 +108,9 @@ whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
 tic
 if beta > 0
     [x, y, w, I, B, whetherAdjustPlan, whetherMoveOrderQuantity] = CashFlowGoodwill(d(1 : T), p(1 : T),...
-                              s(1 : T), c(1 : T), h(1 : T), beta, B0, BL, TL, rL, r0); % there is no unit penalty cost for lost sale for this model
+                              s(1 : T), c(1 : T), h(1 : T), beta, B0, BL, TL, rL, r0, Td); % there is no unit penalty cost for lost sale for this model
 else
-    [x, y, w, I, B] = CashFlowNoGoodwill(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), B0, BL, TL, rL, r0);
+    [x, y, w, I, B] = CashFlowNoGoodwill(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), B0, BL, TL, rL, r0, Td);
 end
 toc
 
@@ -118,7 +121,7 @@ OutputResult(x, y, w, I, B, beta, d, string, whetherAdjustPlan, whetherMoveOrder
 %% run the mip model by cplex
 tic
 fprintf ('\nRun MIP: \n');
-[x, y, w, I, B] = MipCplex(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), beta, B0, BL, TL, rL, r0);
+[x, y, w, I, B] = MipCplex(d(1 : T), p(1 : T), s(1 : T), c(1 : T), h(1 : T), pai(1 : T), beta, B0, BL, TL, rL, r0, Td);
 toc
 
 %% output results to txt file

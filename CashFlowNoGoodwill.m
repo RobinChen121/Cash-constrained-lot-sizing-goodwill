@@ -1,4 +1,4 @@
-function [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL)
+function [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL, Td)
 
 % ***************************************************************************
 % Description: compute the cash flow under the situation of no goodwill
@@ -17,6 +17,7 @@ function [x, y, w, I, B] = CashFlowNoGoodwill(d, p, s, c, h, pai, B0, BL, TL, rL
 % TL: length of credit-based loan
 % rL: interest rate of loan
 % pai: unit penalty cost for lost sale
+% Td: payment delay length from customers
 %
 %
 % Decision variables:
@@ -79,7 +80,7 @@ for i = 1 : T
         if TL - i + 1 > 0
             b(TL - i + 1 : j - i) = b(TL - i + 1 : j - i) - BL * (1 + rL)^TL;
         end
-        A(j - i + 1, :)=c(i)*ones(1, j - i + 1);
+        A(j - i + 1, :) = c(i)*ones(1, j - i + 1);
         cumPrice = tril(repmat(p(i : j) + pai(i : j), n, 1));
         for k = 1 : j - i
             A(k, :) = c(i) * ones(1, j - i + 1) - cumPrice(k, :) + cumUnitHoldCost(k, :);
@@ -301,5 +302,7 @@ for t = 2 : T
     end
 end
 
+r0Array = (1 / (1 + r0)) .^ (1 : T);
+B = B .* r0Array; 
 end
 
