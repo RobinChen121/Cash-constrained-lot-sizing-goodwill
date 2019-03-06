@@ -66,7 +66,8 @@ M1 = ones(1, T) * sum(d);
 M2 = sum(d);
 sumB0 = BL + B0;
 Aineq = [diag(-M1), diag(ones(1, T)), zeros(T, T), zeros(T, T),zeros(T, T); % yt <= Mxt
-    tril(repmat(s, T, 1)), tril(repmat(c, T, 1)) + tril(cycleCumH), cyclePrice + tril(cycleCumH), -cyclePrice - tril(cycleCumH), zeros(T,T); % Ctyt + Stxt <= Bt-1 
+    %tril(repmat(s, T, 1)), tril(repmat(c, T, 1)) + tril(cycleCumH), cyclePrice + tril(cycleCumH), -cyclePrice - tril(cycleCumH), zeros(T,T); % Ctyt + Stxt <= Bt-1 
+    zeros(T, T), diag(ones(1, T)), zeros(T, 3 * T);
     zeros(T, T), -tril(ones(T, T)), -tril(ones(T, T)), tril(ones(T, T)), zeros(T, T); % It>=0
     zeros(T, 2 * T), diag(ones(1, T)), -diag(ones(1, T)), zeros(T, T); % wt <= Edt
     zeros(T, 2 * T), cycleBeta, diag(ones(1, T)), M2 * tempOne;    %Edt ¡Ü dt - ¦Â * w(t-1) + M2*(1-¦Ät)
@@ -77,12 +78,21 @@ Aineq = [diag(-M1), diag(ones(1, T)), zeros(T, T), zeros(T, T),zeros(T, T); % yt
     zeros(T - 1, 2 * T), -cycleBeta(2 : T, :),zeros(T - 1, T), -M2 * tempOne(2 : T, :);    %d_t ¡Ü ¦Âw(t-1) + M2 *¦Ä_t
     zeros(T - 1, 2 * T), cycleBeta(2 : T, :), zeros(T - 1, T), M2 * tempOne(2 : T, :);     %d_t >=¦Âw(t-1) + M2 * (1-¦Ä_t)
     ];
-bineq = [zeros(T, 1); [sumB0 * ones(TL, 1); (sumB0 - BL * (1 + rL)^TL) * ones(T - TL, 1)]; zeros(T, 1); zeros(T, 1); d' + [0; M2 * ones(T - 1, 1)];
-    -d' + [0; M2 * ones(T - 1, 1)]; 1; -1; zeros(T, 1); -d(2 : T)'; d(2 : T)' + M2 * ones(T - 1, 1)];
+% bineq = [zeros(T, 1); [sumB0 * ones(TL, 1); (sumB0 - BL * (1 + rL)^TL) * ones(T - TL, 1)]; zeros(T, 1); zeros(T, 1); d' + [0; M2 * ones(T - 1, 1)];
+%    -d' + [0; M2 * ones(T - 1, 1)]; 1; -1; zeros(T, 1); -d(2 : T)'; d(2 : T)' + M2 * ones(T - 1, 1)];
+
+%    bineq = [zeros(T, 1);  zeros(T, 1); zeros(T, 1); d' + [0; M2 * ones(T  -1, 1)];   
+%    -d' + [0; M2 * ones(T - 1, 1)]; 1; -1; zeros(T, 1); -d(2 : T)'; d(2 :  T)' + M2 * ones(T - 1, 1)];  % Aksen's model
+
+   bineq = [zeros(T, 1);  90 * ones(T, 1); zeros(T, 1); zeros(T, 1); d' + [0; M2 * ones(T  -1, 1)];   % traditional capacity model
+   -d' + [0; M2 * ones(T - 1, 1)]; 1; -1; zeros(T, 1); -d(2 : T)'; d(2 :  T)' + M2 * ones(T - 1, 1)];
+
 Aeq = [];
 beq = [];
 lb = zeros(5 * T,1);
-ub = [ones(T, 1); M2 * ones(2 * T, 1); d'; ones(T, 1)];
+%ub = [ones(T, 1); M2 * ones(2 * T, 1); d'; ones(T, 1)];
+
+ub = [ones(T, 1); M2 * ones(1 * T, 1); zeros(T, 1); d'; ones(T, 1)]; % traditional capacity model
 
 % type of decision variables
 a = zeros(1, 5 * T);
