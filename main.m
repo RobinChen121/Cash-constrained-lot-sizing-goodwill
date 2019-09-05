@@ -52,7 +52,8 @@ pai = zeros(1, T);
 r0 = 0.0006;
 Td = 0;
 
-whetherAdjustPlan = 0; whetherMoveOrderQuantity = 0;
+whetherAdjustPlan = 0; 
+whetherMoveOrderQuantity = 0;
 
 % % or reading some parameter values from txt file in the current directory
 % string = input('please input your file name: \n', 's'); % for example, d_6.txt
